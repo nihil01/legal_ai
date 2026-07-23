@@ -1,0 +1,7 @@
+services:
+  legal-parser:
+    build: .
+    volumes:
+      - ./documents:/documents:ro
+      - ./output:/output
+    command: ["/documents", "--output", "/output", "--recursive"]
