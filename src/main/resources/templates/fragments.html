@@ -1,0 +1,44 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <aside class="sidebar" th:fragment="sidebar(active)">
+      <a class="brand" href="/admin" aria-label="Legal AI dashboard">
+        <span class="brand-mark">L</span>
+        <span><strong>Legal AI</strong><small>Knowledge platform</small></span>
+      </a>
+      <nav class="sidebar-nav" aria-label="Основная навигация">
+        <a href="/admin" th:classappend="${active == 'dashboard'} ? ' active'">
+          <span class="nav-icon">⌂</span><span>Обзор</span>
+        </a>
+        <a href="/admin/documents" th:classappend="${active == 'documents'} ? ' active'">
+          <span class="nav-icon">▤</span><span>Документы</span>
+        </a>
+        <a href="/admin/documents/upload" th:classappend="${active == 'upload'} ? ' active'">
+          <span class="nav-icon">＋</span><span>Загрузка</span>
+        </a>
+        <a href="/admin/search" th:classappend="${active == 'search'} ? ' active'">
+          <span class="nav-icon">⌕</span><span>Semantic search</span>
+        </a>
+      </nav>
+      <div class="sidebar-status">
+        <span class="live-dot"></span>
+        <div><strong>RAG pipeline</strong><small>Система активна</small></div>
+      </div>
+      <div class="sidebar-footer">Spring MVC · pgvector</div>
+    </aside>
+
+    <header class="topbar" th:fragment="topbar(title, subtitle)">
+      <button class="icon-button mobile-menu" type="button" data-sidebar-toggle aria-label="Открыть меню">☰</button>
+      <div class="topbar-title"><strong th:text="${title}"></strong><small th:text="${subtitle}"></small></div>
+      <div class="topbar-actions">
+        <a class="icon-button" href="/admin/search" aria-label="Поиск">⌕</a>
+        <span class="admin-avatar" title="Administrator">A</span>
+      </div>
+    </header>
+
+    <div th:fragment="alerts">
+      <div class="toast success" th:if="${message}"><span>✓</span><span th:text="${message}"></span></div>
+      <div class="toast error" th:if="${error}"><span>!</span><span th:text="${error}"></span></div>
+    </div>
+  </body>
+</html>

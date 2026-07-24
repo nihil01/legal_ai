@@ -1,1 +1,9 @@
-.idea
+.idea/
+.vscode/
+target/
+.env
+*.log
+/documents/
+output/
+data/
+.DS_Store

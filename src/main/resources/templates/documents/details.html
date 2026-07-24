@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" th:if="${document.status.name() != 'COMPLETED' and document.status.name() != 'FAILED'}" content="3" />
+    <title th:text="${document.title} + ' — Legal AI'">Документ — Legal AI</title><link rel="stylesheet" href="/css/app.css" /><script defer src="/js/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside th:replace="~{fragments :: sidebar('documents')}"></aside>
+      <section class="workspace">
+        <header th:replace="~{fragments :: topbar('Документ', 'Структура и результаты ingestion')}"></header>
+        <main class="page-content">
+          <div th:replace="~{fragments :: alerts}"></div>
+          <a class="back-link" href="/admin/documents">← Все документы</a>
+          <section class="document-hero panel">
+            <div class="document-title-block"><span class="file-tile large" th:text="${#strings.toUpperCase(#strings.substringAfter(document.originalFilename,'.'))}">DOC</span><div><span class="section-label" th:text="${document.originalFilename}"></span><h1 th:text="${document.title}"></h1><p th:if="${document.sourceUrl}"><a th:href="${document.sourceUrl}" target="_blank" rel="noopener">Официальный источник ↗</a></p></div></div>
+            <span class="status-pill large" th:classappend="${document.status}" th:text="${document.status}"></span>
+          </section>
+          <div class="toast error" th:if="${document.processingError}"><span>!</span><span th:text="${document.processingError}"></span></div>
+          <section class="metric-grid document-metrics">
+            <article class="metric-card"><span class="metric-icon blue">◆</span><div><small>Chunks</small><strong th:text="${chunkCount}">0</strong><em>структурных фрагментов</em></div></article>
+            <article class="metric-card"><span class="metric-icon violet">文</span><div><small>Язык</small><strong class="text-value" th:text="${document.language ?: '—'}"></strong><em>язык источника</em></div></article>
+            <article class="metric-card"><span class="metric-icon green">▤</span><div><small>Тип</small><strong class="text-value" th:text="${document.documentType ?: '—'}"></strong><em>классификация</em></div></article>
+            <article class="metric-card"><span class="metric-icon amber">↓</span><div><small>Размер</small><strong class="text-value" th:text="${#numbers.formatDecimal(document.fileSize / 1024.0,1,1)} + ' KB'"></strong><em th:text="${#temporals.format(document.createdAt,'dd.MM.yyyy HH:mm')}"></em></div></article>
+          </section>
+          <section class="document-actions panel"><div><strong>Управление обработкой</strong><small>Reprocess заменит текущие chunks после успешного завершения.</small></div><div class="action-group"><form method="post" th:action="@{/admin/documents/{id}/reprocess(id=${document.id})}"><button class="button ghost" type="submit">↻ Повторно обработать</button></form><form method="post" th:action="@{/admin/documents/{id}/delete(id=${document.id})}" data-confirm="Удалить документ, оригинал и все chunks?"><button class="button danger" type="submit">Удалить</button></form></div></section>
+          <section class="chunks-section">
+            <div class="panel-heading"><div><span class="section-label">LEGAL STRUCTURE</span><h2>Смысловые chunks</h2></div><span class="toolbar-count"><b th:text="${chunkCount}">0</b> элементов</span></div>
+            <div class="chunks-list">
+              <article class="panel chunk-card" th:each="c:${chunks}">
+                <header><div><span class="chunk-index" th:text="${#numbers.formatInteger(c.chunkIndex,3)}">001</span><div><strong th:text="${c.articleNumber != null ? 'Статья ' + c.articleNumber : 'Chunk #' + c.chunkIndex}"></strong><small th:text="${c.parentPath ?: 'Корень документа'}"></small></div></div><span class="token-badge" th:text="${c.tokenCount} + ' tokens'"></span></header>
+                <pre th:text="${c.content}"></pre>
+                <details><summary>Metadata и технические данные</summary><code th:text="${c.metadata}"></code></details>
+              </article>
+              <div class="empty-state panel" th:if="${#lists.isEmpty(chunks)}"><span th:text="${document.status.name() == 'FAILED' ? '!' : '↻'}"></span><strong th:text="${document.status.name() == 'FAILED' ? 'Обработка завершилась ошибкой' : 'Chunks ещё создаются'}"></strong><p>Страница обновляется автоматически, пока работает pipeline.</p></div>
+            </div>
+          </section>
+        </main>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Обзор — Legal AI</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <script defer src="/js/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside th:replace="~{fragments :: sidebar('dashboard')}"></aside>
+      <section class="workspace">
+        <header th:replace="~{fragments :: topbar('Обзор', 'Состояние юридической базы знаний')}"></header>
+        <main class="page-content">
+          <div th:replace="~{fragments :: alerts}"></div>
+          <section class="hero-panel">
+            <div>
+              <span class="section-label">LEGAL INTELLIGENCE</span>
+              <h1>Документы превращаются<br />в проверяемые знания.</h1>
+              <p>Загружайте нормативные акты, контролируйте ingestion pipeline и проверяйте качество retrieval.</p>
+              <div class="hero-actions">
+                <a class="button primary" href="/admin/documents/upload">＋ Загрузить документ</a>
+                <a class="button ghost" href="/admin/search">Открыть поиск →</a>
+              </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+              <div class="ai-core">AI</div>
+              <span class="data-node node-one">DOC</span><span class="data-node node-two">AZ</span><span class="data-node node-three">RAG</span>
+            </div>
+          </section>
+
+          <section class="metric-grid" aria-label="Метрики платформы">
+            <article class="metric-card"><span class="metric-icon blue">▤</span><div><small>Всего документов</small><strong th:text="${totalDocuments}">0</strong><em>в юридической базе</em></div></article>
+            <article class="metric-card"><span class="metric-icon green">✓</span><div><small>Обработано</small><strong th:text="${completedDocuments}">0</strong><em>готово к поиску</em></div></article>
+            <article class="metric-card"><span class="metric-icon violet">◆</span><div><small>Смысловых chunks</small><strong th:text="${totalChunks}">0</strong><em>с metadata и vectors</em></div></article>
+            <article class="metric-card"><span class="metric-icon amber">↻</span><div><small>В обработке</small><strong th:text="${processingDocuments}">0</strong><em th:text="${failedDocuments > 0 ? failedDocuments + ' с ошибкой' : 'очередь стабильна'}">очередь стабильна</em></div></article>
+          </section>
+
+          <div class="content-grid dashboard-grid">
+            <section class="panel">
+              <div class="panel-heading"><div><span class="section-label">ПОСЛЕДНИЕ ДОКУМЕНТЫ</span><h2>База знаний</h2></div><a href="/admin/documents">Все документы →</a></div>
+              <div class="document-feed">
+                <a class="document-row" th:each="d : ${recentDocuments}" th:href="@{/admin/documents/{id}(id=${d.id})}">
+                  <span class="file-tile" th:text="${#strings.toUpperCase(#strings.substringAfter(d.originalFilename,'.'))}">DOC</span>
+                  <span class="document-main"><strong th:text="${d.title}"></strong><small th:text="${d.originalFilename}"></small></span>
+                  <span class="status-pill" th:classappend="${d.status}" th:text="${d.status}"></span>
+                  <span class="chunk-number"><b th:text="${chunkCounts[d.id]}">0</b><small>chunks</small></span>
+                  <span class="row-arrow">›</span>
+                </a>
+                <div class="empty-state compact" th:if="${#lists.isEmpty(recentDocuments)}"><span>▤</span><strong>База пока пуста</strong><p>Загрузите первый документ, чтобы запустить ingestion.</p></div>
+              </div>
+            </section>
+
+            <aside class="panel pipeline-panel">
+              <div class="panel-heading"><div><span class="section-label">PIPELINE</span><h2>Как это работает</h2></div><span class="live-badge"><i></i> LIVE</span></div>
+              <ol class="pipeline-steps">
+                <li><span>01</span><div><strong>Извлечение</strong><small>DOC · DOCX · PDF · HTML · TXT</small></div></li>
+                <li><span>02</span><div><strong>Legal structure</strong><small>Разделы, главы, статьи, пункты</small></div></li>
+                <li><span>03</span><div><strong>Semantic chunks</strong><small>Контекст родителей и metadata</small></div></li>
+                <li><span>04</span><div><strong>Vector embeddings</strong><small>PostgreSQL + pgvector</small></div></li>
+              </ol>
+              <div class="scheduler-note"><span>◷</span><div><strong>E-qanun scheduler готов</strong><small>Quartz · cron · Asia/Baku</small></div></div>
+            </aside>
+          </div>
+        </main>
+      </section>
+    </div>
+  </body>
+</html>

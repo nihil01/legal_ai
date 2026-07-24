@@ -1,7 +1,60 @@
 services:
-  legal-parser:
-    build: .
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: legal_ai
+      POSTGRES_USER: legal_ai
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env}
     volumes:
-      - ./documents:/documents:ro
-      - ./output:/output
-    command: ["/documents", "--output", "/output", "--recursive"]
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legal_ai -d legal_ai"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/legal_ai
+      DATABASE_USERNAME: legal_ai
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      DOCUMENT_STORAGE_PATH: /data/legal-ai/original-documents
+      PROCESSING_LOCK_TIMEOUT_SECONDS: ${PROCESSING_LOCK_TIMEOUT_SECONDS:-600}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-local}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://api.openai.com/v1}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_CONNECT_TIMEOUT_SECONDS: ${EMBEDDING_CONNECT_TIMEOUT_SECONDS:-10}
+      EMBEDDING_READ_TIMEOUT_SECONDS: ${EMBEDDING_READ_TIMEOUT_SECONDS:-60}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_TEXT_MODEL: ${OPENAI_TEXT_MODEL:-gpt-4.1-mini}
+      OPENAI_TRANSCRIPTION_MODEL: ${OPENAI_TRANSCRIPTION_MODEL:-gpt-4o-mini-transcribe}
+      OPENAI_CONNECT_TIMEOUT_SECONDS: ${OPENAI_CONNECT_TIMEOUT_SECONDS:-10}
+      OPENAI_READ_TIMEOUT_SECONDS: ${OPENAI_READ_TIMEOUT_SECONDS:-120}
+      OPENAI_MAX_AUDIO_BYTES: ${OPENAI_MAX_AUDIO_BYTES:-10485760}
+      EQANUN_SYNC_ENABLED: ${EQANUN_SYNC_ENABLED:-true}
+      EQANUN_SYNC_CRON: ${EQANUN_SYNC_CRON:-0 0 3 * * ?}
+      EQANUN_SYNC_TIME_ZONE: ${EQANUN_SYNC_TIME_ZONE:-Asia/Baku}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    volumes:
+      - document_storage:/data/legal-ai/original-documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  document_storage:
