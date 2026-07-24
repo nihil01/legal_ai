@@ -119,16 +119,33 @@ EQANUN_SYNC_CRON=0 0/15 * * * ?
 
 ## Сборка и тесты
 
-Если локально нет Java 21/Maven:
+Проект фиксирует Maven `3.9.11` через Maven Wrapper и требует JDK 21:
 
 ```bash
-docker run --rm -v "$PWD:/workspace" -w /workspace   maven:3.9.11-eclipse-temurin-21 mvn clean test
+./mvnw clean verify
 ```
 
-Обычная локальная сборка:
+### IntelliJ IDEA
+
+Открывайте именно корень, содержащий `pom.xml`:
+
+```text
+/home/server/projects/legal_ai
+```
+
+Проверьте настройки:
+
+1. `File → Project Structure → Project SDK` — JDK 21.
+2. `Settings → Build Tools → Maven → Maven home path` — `Use Maven wrapper`.
+3. `Settings → Build Tools → Maven → Importing → JDK for importer` — `Project SDK (21)`.
+4. `Settings → Build Tools → Maven → Runner → JRE` — `Project SDK (21)`.
+5. В Maven tool window нажмите `Reload All Maven Projects`.
+
+Если локально нет JDK 21, сборку можно выполнить контейнером:
 
 ```bash
-mvn clean package
+docker run --rm -v "$PWD:/workspace" -w /workspace \
+  maven:3.9.11-eclipse-temurin-21 mvn clean verify
 ```
 
 ## Архитектурные границы
