@@ -131,13 +131,31 @@ public class DocumentProcessingJobStore {
                         job.worker(),
                         job.lockToken());
         if (updated != 1) return false;
-        jdbc.update(
-                """
-                UPDATE legal_documents
-                SET status = 'COMPLETED', processing_error = null, updated_at = now()
-                WHERE id = ?
-                """,
-                job.documentId());
+        CompletionTarget target =
+                jdbc.queryForObject(
+                        """
+                        SELECT external_source, external_id, version_number, effective_date
+                        FROM legal_documents
+                        WHERE id = ?
+                        """,
+                        (row, number) ->
+                                new CompletionTarget(
+                                        row.getString(1),
+                                        row.getString(2),
+                                        row.getInt(3),
+                                        row.getObject(4, java.time.LocalDate.class)),
+                        job.documentId());
+        if (target != null && target.externalSource() != null) {
+            activateExternalVersion(job.documentId(), target);
+        } else {
+            jdbc.update(
+                    """
+                    UPDATE legal_documents
+                    SET status = 'COMPLETED', processing_error = null, updated_at = now()
+                    WHERE id = ?
+                    """,
+                    job.documentId());
+        }
         return true;
     }
 
@@ -191,6 +209,72 @@ public class DocumentProcessingJobStore {
                 documentId);
     }
 
+    private void activateExternalVersion(UUID documentId, CompletionTarget target) {
+        jdbc.query(
+                """
+                SELECT id
+                FROM legal_documents
+                WHERE external_source = ? AND external_id = ?
+                ORDER BY version_number, id
+                FOR UPDATE
+                """,
+                (row, number) -> row.getObject(1, UUID.class),
+                target.externalSource(),
+                target.externalId());
+        Integer newerCompleted =
+                jdbc.queryForObject(
+                        """
+                        SELECT count(*)
+                        FROM legal_documents
+                        WHERE external_source = ? AND external_id = ?
+                          AND status = 'COMPLETED' AND version_number > ?
+                        """,
+                        Integer.class,
+                        target.externalSource(),
+                        target.externalId(),
+                        target.versionNumber());
+        if (newerCompleted != null && newerCompleted > 0) {
+            jdbc.update(
+                    """
+                    UPDATE legal_documents d
+                    SET status = 'COMPLETED', processing_error = null, is_current = FALSE,
+                        valid_to = (
+                            SELECT min(newer.effective_date)
+                            FROM legal_documents newer
+                            WHERE newer.external_source = ? AND newer.external_id = ?
+                              AND newer.status = 'COMPLETED'
+                              AND newer.version_number > ?
+                        ),
+                        updated_at = now()
+                    WHERE d.id = ?
+                    """,
+                    target.externalSource(),
+                    target.externalId(),
+                    target.versionNumber(),
+                    documentId);
+            return;
+        }
+        jdbc.update(
+                """
+                UPDATE legal_documents
+                SET is_current = FALSE, valid_to = ?, updated_at = now()
+                WHERE external_source = ? AND external_id = ?
+                  AND is_current = TRUE AND id <> ?
+                """,
+                target.effectiveDate(),
+                target.externalSource(),
+                target.externalId(),
+                documentId);
+        jdbc.update(
+                """
+                UPDATE legal_documents
+                SET status = 'COMPLETED', processing_error = null,
+                    is_current = TRUE, valid_to = null, updated_at = now()
+                WHERE id = ?
+                """,
+                documentId);
+    }
+
     private void updateDocumentStatus(UUID documentId, String status, String error) {
         jdbc.update(
                 """
@@ -207,4 +291,10 @@ public class DocumentProcessingJobStore {
         if (error == null) return "Unknown error";
         return error.substring(0, Math.min(error.length(), 4000));
     }
+
+    private record CompletionTarget(
+            String externalSource,
+            String externalId,
+            int versionNumber,
+            java.time.LocalDate effectiveDate) {}
 }

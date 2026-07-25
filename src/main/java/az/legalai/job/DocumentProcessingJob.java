@@ -3,9 +3,14 @@ package az.legalai.job;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "document_processing_jobs")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DocumentProcessingJob {
     @Id private UUID id;
 
@@ -35,8 +40,6 @@ public class DocumentProcessingJob {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    protected DocumentProcessingJob() {}
-
     public DocumentProcessingJob(UUID id, UUID documentId) {
         this.id = id;
         this.documentId = documentId;
@@ -54,17 +57,5 @@ public class DocumentProcessingJob {
     @PreUpdate
     void update() {
         updatedAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getDocumentId() {
-        return documentId;
-    }
-
-    public JobStatus getStatus() {
-        return status;
     }
 }

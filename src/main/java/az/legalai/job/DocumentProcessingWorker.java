@@ -2,15 +2,14 @@ package az.legalai.job;
 
 import az.legalai.ingestion.pipeline.DocumentIngestionPipeline;
 import java.net.InetAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class DocumentProcessingWorker {
-    private static final Logger log = LoggerFactory.getLogger(DocumentProcessingWorker.class);
 
     private final DocumentProcessingJobStore jobs;
     private final DocumentIngestionPipeline pipeline;
@@ -44,7 +43,8 @@ public class DocumentProcessingWorker {
                     "Stopped stale worker for document {} because its processing lease was lost",
                     job.documentId());
         } catch (Exception exception) {
-            String error = rootMessage(exception);
+            String error =
+                    "Sənədin emalı zamanı xəta baş verdi. Təkrar emalı başladın və sistem jurnalını yoxlayın.";
             log.error("Document {} processing failed", job.documentId(), exception);
             JobFailureOutcome outcome = jobs.fail(job, error, maxAttempts);
             if (outcome == JobFailureOutcome.LEASE_LOST) {
@@ -65,12 +65,5 @@ public class DocumentProcessingWorker {
         } catch (Exception exception) {
             return "worker-" + ProcessHandle.current().pid();
         }
-    }
-
-    private String rootMessage(Throwable exception) {
-        Throwable cause = exception;
-        while (cause.getCause() != null) cause = cause.getCause();
-        String message = cause.getMessage();
-        return message == null ? cause.getClass().getSimpleName() : message;
     }
 }

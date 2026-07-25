@@ -1,40 +1,41 @@
 <!doctype html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<html lang="az" xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Документы — Legal AI</title><link rel="stylesheet" href="/css/app.css" /><script defer src="/js/app.js"></script>
+    <title>Sənədlər — Legal AI</title><link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/legal-ai-theme.css" /><script defer src="/js/app.js"></script>
   </head>
   <body>
     <div class="app-shell">
       <aside th:replace="~{fragments :: sidebar('documents')}"></aside>
       <section class="workspace">
-        <header th:replace="~{fragments :: topbar('Документы', 'Управление юридической базой')}"></header>
+        <header th:replace="~{fragments :: topbar('Sənədlər', 'Hüquqi bilik bazasının idarə edilməsi')}"></header>
         <main class="page-content">
           <div th:replace="~{fragments :: alerts}"></div>
-          <div class="page-heading"><div><span class="section-label">KNOWLEDGE BASE</span><h1>Юридические документы</h1><p>Оригиналы, структура, chunks и состояние обработки в одном месте.</p></div><a class="button primary" href="/admin/documents/upload">＋ Новый документ</a></div>
+          <div class="page-heading"><div><span class="section-label">BİLİK BAZASI</span><h1>Hüquqi sənədlər</h1><p>Orijinallar, quruluş, fraqmentlər və emal vəziyyəti bir yerdə.</p></div><a class="button primary" href="/admin/documents/upload">＋ Yeni sənəd</a></div>
           <section class="toolbar panel">
-            <label class="search-control"><span>⌕</span><input type="search" placeholder="Поиск по названию или файлу" data-document-search /></label>
-            <select data-status-filter aria-label="Фильтр по статусу"><option value="">Все статусы</option><option value="COMPLETED">Завершённые</option><option value="PROCESSING">В обработке</option><option value="FAILED">С ошибкой</option></select>
-            <span class="toolbar-count"><b th:text="${#lists.size(documents)}">0</b> документов</span>
+            <label class="search-control"><span>⌕</span><input type="search" placeholder="Ada və ya fayla görə axtarış" data-document-search /></label>
+            <select data-status-filter aria-label="Vəziyyətə görə süzgəc"><option value="">Bütün vəziyyətlər</option><option value="COMPLETED">Tamamlananlar</option><option value="PROCESSING">Emal olunanlar</option><option value="FAILED">Xətalılar</option></select>
+            <span class="toolbar-count"><b th:text="${#lists.size(documents)}">0</b> sənəd</span>
           </section>
           <section class="panel table-panel">
             <div class="responsive-table">
               <table class="documents-table">
-                <thead><tr><th>Документ</th><th>Тип / язык</th><th>Статус</th><th>Chunks</th><th>Загружен</th><th></th></tr></thead>
+                <thead><tr><th>Sənəd</th><th>Növ / dil</th><th>Vəziyyət</th><th>Fraqmentlər</th><th>Yüklənmə vaxtı</th><th></th></tr></thead>
                 <tbody>
                   <tr th:each="d:${documents}" data-document-row th:attr="data-search=${#strings.toLowerCase(d.title + ' ' + d.originalFilename)},data-status=${d.status}">
                     <td><a class="document-cell" th:href="@{/admin/documents/{id}(id=${d.id})}"><span class="file-tile" th:text="${#strings.toUpperCase(#strings.substringAfter(d.originalFilename,'.'))}">DOC</span><span><strong th:text="${d.title}"></strong><small th:text="${d.originalFilename}"></small></span></a></td>
-                    <td><span class="meta-pair"><b th:text="${d.documentType ?: '—'}"></b><small th:text="${d.language ?: '—'}"></small></span></td>
-                    <td><span class="status-pill" th:classappend="${d.status}" th:text="${d.status}"></span></td>
+                    <td><span class="meta-pair"><b th:text="${@uiLabels.documentType(d.documentType)}"></b><small th:text="${@uiLabels.language(d.language)}"></small></span></td>
+                    <td><span class="status-pill" th:classappend="${d.status}" th:text="${@uiLabels.status(d.status)}"></span></td>
                     <td><span class="chunk-count" th:text="${chunkCounts[d.id]}">0</span></td>
                     <td><time th:text="${#temporals.format(d.createdAt,'dd.MM.yyyy HH:mm')}"></time></td>
-                    <td><a class="icon-button" th:href="@{/admin/documents/{id}(id=${d.id})}" aria-label="Открыть">›</a></td>
+                    <td><a class="icon-button" th:href="@{/admin/documents/{id}(id=${d.id})}" aria-label="Aç">›</a></td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div class="empty-state" th:if="${#lists.isEmpty(documents)}"><span>▤</span><strong>Документов пока нет</strong><p>Поддерживаются DOC, DOCX, PDF, HTML и TXT.</p><a class="button primary" href="/admin/documents/upload">Загрузить первый документ</a></div>
-            <div class="empty-state hidden" data-filter-empty><span>⌕</span><strong>Ничего не найдено</strong><p>Измените поисковый запрос или статус.</p></div>
+            <div class="empty-state" th:if="${#lists.isEmpty(documents)}"><span>▤</span><strong>Hələ sənəd yoxdur</strong><p>DOC, DOCX, PDF, HTML və TXT formatları dəstəklənir.</p><a class="button primary" href="/admin/documents/upload">İlk sənədi yüklə</a></div>
+            <div class="empty-state hidden" data-filter-empty><span>⌕</span><strong>Heç nə tapılmadı</strong><p>Axtarış sorğusunu və ya vəziyyət süzgəcini dəyişin.</p></div>
           </section>
         </main>
       </section>

@@ -4,9 +4,14 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "legal_documents")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LegalDocument {
     @Id private UUID id;
     private String title;
@@ -22,6 +27,15 @@ public class LegalDocument {
 
     @Column(name = "source_url")
     private String sourceUrl;
+
+    @Column(name = "external_source")
+    private String externalSource;
+
+    @Column(name = "external_id")
+    private String externalId;
+
+    @Column(name = "external_version_id")
+    private String externalVersionId;
 
     @Column(name = "storage_key", nullable = false)
     private String storageKey;
@@ -70,8 +84,6 @@ public class LegalDocument {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    protected LegalDocument() {}
-
     public LegalDocument(
             UUID id,
             String title,
@@ -102,6 +114,44 @@ public class LegalDocument {
         this.current = true;
     }
 
+    public static LegalDocument fromEqanun(
+            UUID id,
+            String title,
+            String sourceUrl,
+            String originalFilename,
+            String mimeType,
+            String storageKey,
+            long fileSize,
+            String checksum,
+            String externalId,
+            String externalVersionId,
+            LocalDate effectiveDate,
+            UUID documentGroupId,
+            int versionNumber) {
+        LegalDocument document =
+                new LegalDocument(
+                        id,
+                        title,
+                        originalFilename,
+                        DocumentType.CODE,
+                        "az",
+                        sourceUrl,
+                        storageKey,
+                        mimeType,
+                        fileSize,
+                        null,
+                        effectiveDate,
+                        checksum);
+        document.externalSource = "EQANUN";
+        document.externalId = externalId;
+        document.externalVersionId = externalVersionId;
+        document.documentGroupId = documentGroupId;
+        document.versionNumber = versionNumber;
+        document.validFrom = effectiveDate;
+        document.current = false;
+        return document;
+    }
+
     @PrePersist
     void create() {
         Instant now = Instant.now();
@@ -112,94 +162,6 @@ public class LegalDocument {
     @PreUpdate
     void update() {
         updatedAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getOriginalFilename() {
-        return originalFilename;
-    }
-
-    public DocumentType getDocumentType() {
-        return documentType;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public String getSourceUrl() {
-        return sourceUrl;
-    }
-
-    public String getStorageKey() {
-        return storageKey;
-    }
-
-    public String getMimeType() {
-        return mimeType;
-    }
-
-    public long getFileSize() {
-        return fileSize;
-    }
-
-    public LocalDate getAdoptionDate() {
-        return adoptionDate;
-    }
-
-    public LocalDate getEffectiveDate() {
-        return effectiveDate;
-    }
-
-    public LocalDate getExpirationDate() {
-        return expirationDate;
-    }
-
-    public DocumentStatus getStatus() {
-        return status;
-    }
-
-    public String getProcessingError() {
-        return processingError;
-    }
-
-    public String getChecksum() {
-        return checksum;
-    }
-
-    public int getVersionNumber() {
-        return versionNumber;
-    }
-
-    public UUID getDocumentGroupId() {
-        return documentGroupId;
-    }
-
-    public LocalDate getValidFrom() {
-        return validFrom;
-    }
-
-    public LocalDate getValidTo() {
-        return validTo;
-    }
-
-    public boolean isCurrent() {
-        return current;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 
     public void setStatus(DocumentStatus status) {

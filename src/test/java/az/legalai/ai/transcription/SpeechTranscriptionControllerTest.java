@@ -50,6 +50,6 @@ class SpeechTranscriptionControllerTest {
                                                 "audio/webm",
                                                 new byte[] {1, 2, 3})))
                 .andExpect(status().isPayloadTooLarge())
-                .andExpect(jsonPath("$.error").value("Audio recording is too large"));
+                .andExpect(jsonPath("$.error").value("Səs yazısının ölçüsü çox böyükdür"));
     }
 }

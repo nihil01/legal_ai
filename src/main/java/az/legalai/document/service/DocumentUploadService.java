@@ -7,8 +7,8 @@ import az.legalai.job.DocumentProcessingJobRepository;
 import az.legalai.storage.DocumentStorage;
 import az.legalai.storage.StoredFile;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -16,30 +16,21 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class DocumentUploadService {
-    private static final Logger log = LoggerFactory.getLogger(DocumentUploadService.class);
 
     private final DocumentValidator validator;
     private final DocumentStorage storage;
     private final LegalDocumentRepository documents;
     private final DocumentProcessingJobRepository jobs;
 
-    public DocumentUploadService(
-            DocumentValidator validator,
-            DocumentStorage storage,
-            LegalDocumentRepository documents,
-            DocumentProcessingJobRepository jobs) {
-        this.validator = validator;
-        this.storage = storage;
-        this.documents = documents;
-        this.jobs = jobs;
-    }
-
     @Transactional
     public UUID upload(MultipartFile file, UploadCommand command) {
         ValidatedDocument validated = validator.validate(file);
-        if (documents.findByChecksum(validated.checksum()).isPresent())
+        if (documents.findByChecksumAndExternalSourceIsNull(validated.checksum()).isPresent()) {
             throw new DuplicateDocumentException();
+        }
         StoredFile stored = storage.store(validated.originalFilename(), validated.bytes());
         registerRollbackCleanup(stored.storageKey());
 

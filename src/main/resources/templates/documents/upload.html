@@ -1,27 +1,28 @@
 <!doctype html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<html lang="az" xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Загрузка — Legal AI</title><link rel="stylesheet" href="/css/app.css" /><script defer src="/js/app.js"></script>
+    <title>Yükləmə — Legal AI</title><link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/legal-ai-theme.css" /><script defer src="/js/app.js"></script>
   </head>
   <body>
     <div class="app-shell">
       <aside th:replace="~{fragments :: sidebar('upload')}"></aside>
       <section class="workspace">
-        <header th:replace="~{fragments :: topbar('Загрузка', 'Новый источник для RAG pipeline')}"></header>
+        <header th:replace="~{fragments :: topbar('Yükləmə', 'RAG emal axını üçün yeni mənbə')}"></header>
         <main class="page-content narrow-page">
           <div th:replace="~{fragments :: alerts}"></div>
-          <div class="page-heading"><div><span class="section-label">DOCUMENT INGESTION</span><h1>Добавить документ</h1><p>Оригинал будет сохранён, проверен и обработан фоновой очередью.</p></div></div>
+          <div class="page-heading"><div><span class="section-label">SƏNƏDİN EMALI</span><h1>Sənəd əlavə et</h1><p>Orijinal saxlanılacaq, yoxlanılacaq və arxa plan növbəsində emal ediləcək.</p></div></div>
           <form class="panel upload-form" method="post" enctype="multipart/form-data" th:action="@{/admin/documents/upload}">
-            <section class="form-section"><div class="section-number">01</div><div class="section-body"><h2>Выберите оригинал</h2><p>Перетащите файл в область или выберите его вручную.</p>
-              <label class="drop-zone" data-drop-zone><input type="file" name="file" required accept=".doc,.docx,.pdf,.html,.htm,.txt" data-file-input /><span class="upload-cloud">⇧</span><strong>Перетащите документ сюда</strong><span>или <u>выберите файл</u> на устройстве</span><small>DOC, DOCX, PDF, HTML, TXT · до 25 MB</small></label>
-              <div class="selected-file hidden" data-selected-file><span class="file-tile">FILE</span><div><strong data-file-name></strong><small data-file-size></small></div><button class="icon-button" type="button" data-clear-file aria-label="Убрать файл">×</button></div>
+            <section class="form-section"><div class="section-number">01</div><div class="section-body"><h2>Orijinalı seçin</h2><p>Faylı bu sahəyə sürükləyin və ya cihazınızdan seçin.</p>
+              <label class="drop-zone" data-drop-zone><input type="file" name="file" required accept=".doc,.docx,.pdf,.html,.htm,.txt" data-file-input /><span class="upload-cloud">⇧</span><strong>Sənədi buraya sürükləyin</strong><span>və ya cihazdan <u>fayl seçin</u></span><small>DOC, DOCX, PDF, HTML, TXT · 25 MB-dək</small></label>
+              <div class="selected-file hidden" data-selected-file><span class="file-tile">FAYL</span><div><strong data-file-name></strong><small data-file-size></small></div><button class="icon-button" type="button" data-clear-file aria-label="Faylı sil">×</button></div>
             </div></section>
-            <section class="form-section"><div class="section-number">02</div><div class="section-body"><h2>Основные данные</h2><p>Поля помогут построить точный контекст для embeddings.</p>
-              <div class="field-grid"><label class="field full"><span>Название документа</span><input name="title" maxlength="500" placeholder="Azərbaycan Respublikasının Mülki Məcəlləsi" /></label><label class="field"><span>Тип документа</span><select name="documentType"><option value="">Не указан</option><option th:each="t:${documentTypes}" th:value="${t}" th:text="${t}"></option></select></label><label class="field"><span>Язык</span><select name="language"><option value="">Авто / не указан</option><option value="az">Azərbaycan dili</option><option value="ru">Русский</option><option value="en">English</option></select></label><label class="field full"><span>URL официального источника</span><input type="url" name="sourceUrl" placeholder="https://e-qanun.az/..." /></label></div>
+            <section class="form-section"><div class="section-number">02</div><div class="section-body"><h2>Əsas məlumatlar</h2><p>Bu sahələr vektor təsvirləri üçün dəqiq kontekst yaratmağa kömək edir.</p>
+              <div class="field-grid"><label class="field full"><span>Sənədin adı</span><input name="title" maxlength="500" placeholder="Azərbaycan Respublikasının Mülki Məcəlləsi" /></label><label class="field"><span>Sənədin növü</span><select name="documentType"><option value="">Göstərilməyib</option><option th:each="t:${documentTypes}" th:value="${t}" th:text="${@uiLabels.documentType(t)}"></option></select></label><label class="field"><span>Dil</span><select name="language"><option value="">Avtomatik / göstərilməyib</option><option value="az">Azərbaycan dili</option><option value="ru">Rus dili</option><option value="en">İngilis dili</option></select></label><label class="field full"><span>Rəsmi mənbənin URL-i</span><input type="url" name="sourceUrl" placeholder="https://e-qanun.az/..." /></label></div>
             </div></section>
-            <section class="form-section"><div class="section-number">03</div><div class="section-body"><h2>Юридические даты</h2><p>Можно заполнить позже, но они важны для будущего версионирования.</p><div class="field-grid"><label class="field"><span>Дата принятия</span><input type="date" name="adoptionDate" /></label><label class="field"><span>Вступление в силу</span><input type="date" name="effectiveDate" /></label></div></div></section>
-            <footer class="form-footer"><a class="button ghost" href="/admin/documents">Отмена</a><button class="button primary" type="submit">Запустить обработку →</button></footer>
+            <section class="form-section"><div class="section-number">03</div><div class="section-body"><h2>Hüquqi tarixlər</h2><p>Bu məlumatları sonradan əlavə etmək olar, lakin gələcək versiyalaşdırma üçün vacibdir.</p><div class="field-grid"><label class="field"><span>Qəbul tarixi</span><input type="text" inputmode="numeric" name="adoptionDate" placeholder="İİİİ-AA-GG" pattern="\d{4}-\d{2}-\d{2}" title="Tarixi İİİİ-AA-GG formatında daxil edin" /></label><label class="field"><span>Qüvvəyə minmə tarixi</span><input type="text" inputmode="numeric" name="effectiveDate" placeholder="İİİİ-AA-GG" pattern="\d{4}-\d{2}-\d{2}" title="Tarixi İİİİ-AA-GG formatında daxil edin" /></label></div></div></section>
+            <footer class="form-footer"><a class="button ghost" href="/admin/documents">Ləğv et</a><button class="button primary" type="submit">Emalı başlat →</button></footer>
           </form>
         </main>
       </section>

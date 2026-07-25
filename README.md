@@ -15,21 +15,32 @@
 - Полноценная адаптивная Thymeleaf admin UI: dashboard, документы, drag-and-drop upload, status/chunks, reprocess/delete и semantic search.
 - Голосовой ввод в semantic search через browser `MediaRecorder` и защищённый speech-to-text endpoint.
 - OpenAI-compatible adapters для text generation и speech-to-text; без ключа функции остаются явно отключёнными.
-- Quartz cron job для будущей синхронизации законов с e-qanun и подготовленный `.doc` parsing extension point.
+- Production-синхронизация кодексов e-qanun через Quartz с source versioning и durable ingestion queue.
 
-## Быстрый запуск
+## Быстрый запуск MVP
 
 ```bash
 cp .env.example .env
-# Обязательно замените DATABASE_PASSWORD и ADMIN_PASSWORD
+# Обязательно замените DATABASE_PASSWORD и ADMIN_PASSWORD.
+# Для доступа из LAN/VPN укажите APP_BIND_ADDRESS=0.0.0.0 и закройте порт firewall-ом от Internet.
 
 docker compose up -d --build
 docker compose ps
 ```
 
-Открыть dashboard: <http://127.0.0.1:8080/admin>
+Открыть страницу входа: <http://127.0.0.1:8080/login>. Браузер перенаправляет все анонимные HTML-запросы на отдельную форму входа; логин и пароль берутся из `.env`. Basic Auth сохранён для smoke-проверок и автоматизации.
 
-Браузер покажет стандартный Basic Auth dialog. Логин и пароль берутся из `.env`.
+После входа доступны:
+
+- dashboard со статусами pipeline;
+- загрузка DOC, DOCX, PDF, HTML и TXT;
+- список документов с поиском и пагинацией;
+- карточка документа со статусом job, metadata и структурными chunks;
+- повторная обработка и удаление;
+- semantic search по завершённым текущим версиям;
+- безопасный logout с CSRF.
+
+Для быстрой демонстрации загрузите `samples/demo-service-agreement.txt`: pipeline распознаёт части, разделы, главы и 12 статей, после чего в карточке отображаются 12 самостоятельных chunks.
 
 ## Embedding providers
 
@@ -78,9 +89,16 @@ Extension points:
 
 На `/admin/search` кнопка микрофона использует `getUserMedia` + `MediaRecorder`, автоматически останавливает запись через 60 секунд, отправляет WebM/Ogg/MP4 и добавляет распознанный текст в вопрос. Для доступа к микрофону production-сайт должен работать по HTTPS; localhost браузеры считают безопасным контекстом.
 
-## Quartz и будущая синхронизация e-qanun
+## Quartz и синхронизация e-qanun
 
 ```env
+EQANUN_API_BASE_URL=https://api.e-qanun.az
+EQANUN_PUBLIC_BASE_URL=https://e-qanun.az/framework/
+EQANUN_ALLOWED_DOWNLOAD_HOSTS=frameworks.e-qanun.az
+EQANUN_CODEX_IDS=46960,46944,46947,46945,46959,46943,46948,46940,46941,46942,46946,46950,46951,46952,46953,46955,46956,46957,46958,56187
+EQANUN_CONNECT_TIMEOUT_SECONDS=10
+EQANUN_READ_TIMEOUT_SECONDS=60
+EQANUN_MAX_DOCUMENT_BYTES=26214400
 EQANUN_SYNC_ENABLED=true
 EQANUN_SYNC_CRON=0 0 3 * * ?
 EQANUN_SYNC_TIME_ZONE=Asia/Baku
@@ -92,14 +110,18 @@ EQANUN_SYNC_TIME_ZONE=Asia/Baku
 EQANUN_SYNC_CRON=0 0/15 * * * ?
 ```
 
-Текущий `PlaceholderEqanunLawSyncService` намеренно не имитирует внешний источник. В нём оставлен `TODO(eq-anun)` для реализации API/DB actuality check. Подготовлены:
+Реальный sync flow:
 
-- `EqanunLawSyncService` — вызываемый scheduler-ом orchestration port;
-- `EqanunLawCandidate` — внешний ID, title, source URL и дата изменения;
-- `EqanunDocParser` / `DefaultEqanunDocParser` — extraction старого бинарного `.doc` через Apache POI HWPF, legal cleanup и structure parsing;
-- `EqanunParsedLaw` — результат, готовый для дальнейшего version mapping и ingestion.
+1. `HttpEqanunApiClient` получает `/getVersions`, разбирает даты `dd.MM.yyyy` и выбирает последнюю редакцию по дате и ID версии.
+2. Уже импортированная комбинация `external_source + external_id + external_version_id` пропускается без скачивания.
+3. `/downloadWord/{codexId}` возвращает URL документа; разрешены только HTTPS-ссылки от configured allowlist host. Формат определяется по magic bytes, потому что e-qanun может отдавать OOXML/DOCX с расширением `.doc` и MIME `application/msword`.
+4. `DatabaseEqanunLawImporter` сохраняет нормализованный оригинал, связывает редакции через `document_group_id`, увеличивает локальный `version_number` и ставит новую неактивную редакцию в durable ingestion queue.
+5. Worker вызывает `EqanunDocParser` внутри durable pipeline, затем создаёт legal structure, chunks и embeddings.
+6. Только после успешного ingestion новая редакция атомарно становится `is_current=true`; предыдущая остаётся доступной до этого момента и затем получает `is_current=false` и `valid_to`.
 
-При реализации источника замените placeholder-сервис, загрузите изменённые `.doc`, передайте stream в `EqanunDocParser`, затем свяжите e-qanun metadata с `document_group_id`, `version_number`, `valid_from`, `valid_to`, `is_current` и поставьте документ в ingestion queue.
+Semantic search читает только chunks документов со статусом `COMPLETED` и `is_current=true`, поэтому не смешивает старые, неготовые и актуальные редакции.
+
+Уникальные индексы и PostgreSQL advisory lock защищают от двойного импорта. Каждая новая внешняя version identity сохраняется отдельной локальной редакцией даже при совпадающем checksum; checksum-дедупликация применяется только к ручным загрузкам.
 
 ## Endpoints
 

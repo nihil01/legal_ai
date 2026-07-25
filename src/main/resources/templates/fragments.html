@@ -1,38 +1,39 @@
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="az" xmlns:th="http://www.thymeleaf.org">
   <body>
     <aside class="sidebar" th:fragment="sidebar(active)">
-      <a class="brand" href="/admin" aria-label="Legal AI dashboard">
+      <a class="brand" href="/admin" aria-label="Legal AI idarəetmə paneli">
         <span class="brand-mark">L</span>
-        <span><strong>Legal AI</strong><small>Knowledge platform</small></span>
+        <span><strong>Legal AI</strong><small>Bilik platforması</small></span>
       </a>
-      <nav class="sidebar-nav" aria-label="Основная навигация">
+      <nav class="sidebar-nav" aria-label="Əsas naviqasiya">
         <a href="/admin" th:classappend="${active == 'dashboard'} ? ' active'">
-          <span class="nav-icon">⌂</span><span>Обзор</span>
+          <span class="nav-icon">⌂</span><span>İcmal</span>
         </a>
         <a href="/admin/documents" th:classappend="${active == 'documents'} ? ' active'">
-          <span class="nav-icon">▤</span><span>Документы</span>
+          <span class="nav-icon">▤</span><span>Sənədlər</span>
         </a>
         <a href="/admin/documents/upload" th:classappend="${active == 'upload'} ? ' active'">
-          <span class="nav-icon">＋</span><span>Загрузка</span>
+          <span class="nav-icon">＋</span><span>Yükləmə</span>
         </a>
         <a href="/admin/search" th:classappend="${active == 'search'} ? ' active'">
-          <span class="nav-icon">⌕</span><span>Semantic search</span>
+          <span class="nav-icon">⌕</span><span>Semantik axtarış</span>
         </a>
       </nav>
       <div class="sidebar-status">
         <span class="live-dot"></span>
-        <div><strong>RAG pipeline</strong><small>Система активна</small></div>
+        <div><strong>RAG emal axını</strong><small>Sistem aktivdir</small></div>
       </div>
       <div class="sidebar-footer">Spring MVC · pgvector</div>
     </aside>
 
     <header class="topbar" th:fragment="topbar(title, subtitle)">
-      <button class="icon-button mobile-menu" type="button" data-sidebar-toggle aria-label="Открыть меню">☰</button>
+      <button class="icon-button mobile-menu" type="button" data-sidebar-toggle aria-label="Menyunu aç">☰</button>
       <div class="topbar-title"><strong th:text="${title}"></strong><small th:text="${subtitle}"></small></div>
       <div class="topbar-actions">
-        <a class="icon-button" href="/admin/search" aria-label="Поиск">⌕</a>
-        <span class="admin-avatar" title="Administrator">A</span>
+        <a class="icon-button" href="/admin/search" aria-label="Axtarış">⌕</a>
+        <span class="admin-avatar" title="İdarəçi">A</span>
+        <form class="logout-form" method="post" th:action="@{/logout}"><button class="icon-button logout-button" type="submit" aria-label="Çıxış" title="Çıxış">↪</button></form>
       </div>
     </header>
 

@@ -4,6 +4,9 @@ import az.legalai.document.domain.DocumentStatus;
 import az.legalai.document.repository.*;
 import az.legalai.document.service.DocumentStateService;
 import az.legalai.embedding.EmbeddingService;
+import az.legalai.eqanun.parser.EqanunDocParser;
+import az.legalai.eqanun.parser.EqanunLawCandidate;
+import az.legalai.eqanun.parser.EqanunParsedLaw;
 import az.legalai.ingestion.chunker.*;
 import az.legalai.ingestion.cleaner.LegalTextCleaner;
 import az.legalai.ingestion.extractor.*;
@@ -12,40 +15,22 @@ import az.legalai.job.JobClaim;
 import az.legalai.storage.DocumentStorage;
 import java.io.InputStream;
 import java.util.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class DocumentIngestionPipeline {
     private final LegalDocumentRepository documents;
     private final DocumentStorage storage;
     private final DocumentExtractorRegistry extractors;
     private final LegalTextCleaner cleaner;
     private final LegalStructureParser parser;
+    private final EqanunDocParser eqanunParser;
     private final LegalDocumentChunker chunker;
     private final EmbeddingService embeddings;
     private final DocumentChunkStore chunks;
     private final DocumentStateService states;
-
-    public DocumentIngestionPipeline(
-            LegalDocumentRepository d,
-            DocumentStorage s,
-            DocumentExtractorRegistry e,
-            LegalTextCleaner c,
-            LegalStructureParser p,
-            LegalDocumentChunker ch,
-            EmbeddingService em,
-            DocumentChunkStore cs,
-            DocumentStateService st) {
-        documents = d;
-        storage = s;
-        extractors = e;
-        cleaner = c;
-        parser = p;
-        chunker = ch;
-        embeddings = em;
-        chunks = cs;
-        states = st;
-    }
 
     public void process(JobClaim job, Runnable leaseHeartbeat) {
         UUID id = job.documentId();
@@ -54,17 +39,37 @@ public class DocumentIngestionPipeline {
         states.update(job, DocumentStatus.PARSING, null);
         leaseHeartbeat.run();
         ExtractedDocument extracted;
+        EqanunParsedLaw eqanunParsed = null;
         try (InputStream in = storage.load(doc.getStorageKey())) {
-            extracted = extractors.get(doc.getMimeType(), doc.getOriginalFilename()).extract(in);
+            if ("EQANUN".equals(doc.getExternalSource())) {
+                eqanunParsed =
+                        eqanunParser.parse(
+                                new EqanunLawCandidate(
+                                        doc.getExternalId(),
+                                        doc.getExternalVersionId(),
+                                        doc.getTitle(),
+                                        doc.getSourceUrl(),
+                                        doc.getEffectiveDate()),
+                                doc.getOriginalFilename(),
+                                doc.getMimeType(),
+                                in);
+                extracted = eqanunParsed.extractedDocument();
+            } else {
+                extracted =
+                        extractors.get(doc.getMimeType(), doc.getOriginalFilename()).extract(in);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Text extraction failed", e);
         }
         leaseHeartbeat.run();
         states.update(job, DocumentStatus.CLEANING, null);
-        var cleaned = cleaner.clean(extracted.blocks());
+        var cleaned = eqanunParsed == null ? cleaner.clean(extracted.blocks()) : extracted.blocks();
         leaseHeartbeat.run();
         states.update(job, DocumentStatus.STRUCTURE_PARSING, null);
-        var root = parser.parse(doc.getTitle(), cleaned);
+        var root =
+                eqanunParsed == null
+                        ? parser.parse(doc.getTitle(), cleaned)
+                        : eqanunParsed.structure();
         leaseHeartbeat.run();
         states.update(job, DocumentStatus.CHUNKING, null);
         var drafts = chunker.chunk(root);

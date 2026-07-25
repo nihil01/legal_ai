@@ -22,7 +22,7 @@ public record UploadCommand(
         if (value == null || value.isBlank()) return null;
         String normalized = value.trim();
         if (normalized.length() > 500) {
-            throw new DocumentValidationException("Название документа слишком длинное");
+            throw new DocumentValidationException("Sənədin adı həddindən artıq uzundur");
         }
         return normalized;
     }
@@ -31,7 +31,7 @@ public record UploadCommand(
         if (value == null || value.isBlank()) return null;
         String normalized = value.trim();
         if (normalized.length() > 2048) {
-            throw new DocumentValidationException("URL источника слишком длинный");
+            throw new DocumentValidationException("Mənbə URL-i həddindən artıq uzundur");
         }
         try {
             URI uri = URI.create(normalized);
@@ -40,11 +40,11 @@ public record UploadCommand(
                     || uri.getHost() == null
                     || uri.getUserInfo() != null) {
                 throw new DocumentValidationException(
-                        "URL источника должен использовать HTTP или HTTPS");
+                        "Mənbə URL-i HTTP və ya HTTPS protokolundan istifadə etməlidir");
             }
             return uri.toASCIIString();
         } catch (IllegalArgumentException exception) {
-            throw new DocumentValidationException("URL источника имеет неверный формат");
+            throw new DocumentValidationException("Mənbə URL-inin formatı yanlışdır");
         }
     }
 
@@ -52,7 +52,7 @@ public record UploadCommand(
         if (value == null || value.isBlank()) return null;
         String normalized = value.trim().toLowerCase(Locale.ROOT);
         if (!normalized.matches("[a-z]{2,8}(?:-[a-z0-9]{1,8})*")) {
-            throw new DocumentValidationException("Неверный код языка");
+            throw new DocumentValidationException("Dil kodu yanlışdır");
         }
         return normalized;
     }

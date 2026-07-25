@@ -3,20 +3,17 @@ package az.legalai.document.service;
 import az.legalai.document.domain.DocumentStatus;
 import az.legalai.job.JobClaim;
 import az.legalai.job.JobLeaseGuard;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class DocumentStateService {
     private final JdbcTemplate jdbc;
     private final JobLeaseGuard leaseGuard;
-
-    public DocumentStateService(JdbcTemplate jdbc, JobLeaseGuard leaseGuard) {
-        this.jdbc = jdbc;
-        this.leaseGuard = leaseGuard;
-    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void update(JobClaim job, DocumentStatus status, String error) {

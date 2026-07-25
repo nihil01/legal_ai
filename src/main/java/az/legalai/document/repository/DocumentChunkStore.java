@@ -10,22 +10,18 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
+@RequiredArgsConstructor
 public class DocumentChunkStore {
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
     private final JobLeaseGuard leaseGuard;
-
-    public DocumentChunkStore(JdbcTemplate jdbc, ObjectMapper mapper, JobLeaseGuard leaseGuard) {
-        this.jdbc = jdbc;
-        this.mapper = mapper;
-        this.leaseGuard = leaseGuard;
-    }
 
     @Transactional
     public void replace(JobClaim job, List<ChunkDraft> chunks, List<float[]> vectors) {
@@ -81,27 +77,73 @@ public class DocumentChunkStore {
         return value == null ? 0 : value;
     }
 
-    public List<ChunkView> list(UUID documentId) {
+    public List<ChunkView> list(UUID documentId, String query, int limit, int offset) {
+        if (query == null || query.isBlank()) {
+            return jdbc.query(
+                    """
+                            select id, chunk_index, section_type, section_number, section_title,
+                                   article_number, clause_number, parent_path, content, token_count, metadata::text
+                            from document_chunks
+                            where document_id=?
+                            order by chunk_index
+                            limit ? offset ?
+                            """,
+                    (row, number) -> map(row, null),
+                    documentId,
+                    limit,
+                    offset);
+        }
+        String pattern = "%" + query.trim() + "%";
         return jdbc.query(
                 """
                         select id, chunk_index, section_type, section_number, section_title,
                                article_number, clause_number, parent_path, content, token_count, metadata::text
-                        from document_chunks where document_id=? order by chunk_index
+                        from document_chunks
+                        where document_id=?
+                          and (content ilike ? or article_number ilike ? or parent_path ilike ?)
+                        order by chunk_index
+                        limit ? offset ?
                         """,
                 (row, number) -> map(row, null),
-                documentId);
+                documentId,
+                pattern,
+                pattern,
+                pattern,
+                limit,
+                offset);
+    }
+
+    public long count(UUID documentId, String query) {
+        if (query == null || query.isBlank()) return count(documentId);
+        String pattern = "%" + query.trim() + "%";
+        Long value =
+                jdbc.queryForObject(
+                        """
+                                select count(*) from document_chunks
+                                where document_id=?
+                                  and (content ilike ? or article_number ilike ? or parent_path ilike ?)
+                                """,
+                        Long.class,
+                        documentId,
+                        pattern,
+                        pattern,
+                        pattern);
+        return value == null ? 0 : value;
     }
 
     public List<ChunkView> search(float[] embedding, int limit) {
         String value = vector(embedding);
         return jdbc.query(
                 """
-                        select id, chunk_index, section_type, section_number, section_title,
-                               article_number, clause_number, parent_path, content, token_count, metadata::text,
-                               1 - (embedding <=> CAST(? AS vector)) similarity
-                        from document_chunks
-                        where embedding is not null
-                        order by embedding <=> CAST(? AS vector)
+                        select c.id, c.chunk_index, c.section_type, c.section_number, c.section_title,
+                               c.article_number, c.clause_number, c.parent_path, c.content, c.token_count, c.metadata::text,
+                               1 - (c.embedding <=> CAST(? AS vector)) similarity
+                        from document_chunks c
+                        join legal_documents d on d.id = c.document_id
+                        where c.embedding is not null
+                          and d.status = 'COMPLETED'
+                          and d.is_current = true
+                        order by c.embedding <=> CAST(? AS vector)
                         limit ?
                         """,
                 (row, number) -> map(row, row.getDouble(12)),

@@ -1,17 +1,15 @@
 package az.legalai.job;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@RequiredArgsConstructor
 public class JobLeaseGuard {
     private final JdbcTemplate jdbc;
-
-    public JobLeaseGuard(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
-    }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void lock(JobClaim job) {

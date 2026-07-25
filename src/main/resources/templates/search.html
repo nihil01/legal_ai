@@ -1,39 +1,40 @@
 <!doctype html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<html lang="az" xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="_csrf" th:content="${_csrf.token}" /><meta name="_csrf_header" th:content="${_csrf.headerName}" />
-    <title>Semantic search — Legal AI</title><link rel="stylesheet" href="/css/app.css" /><script defer src="/js/app.js"></script><script defer src="/js/stt.js"></script>
+    <title>Semantik axtarış — Legal AI</title><link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/legal-ai-theme.css" /><script defer src="/js/app.js"></script><script defer src="/js/stt.js"></script>
   </head>
   <body>
     <div class="app-shell">
       <aside th:replace="~{fragments :: sidebar('search')}"></aside>
       <section class="workspace">
-        <header th:replace="~{fragments :: topbar('Semantic search', 'Диагностика retrieval и голосовой ввод')}"></header>
+        <header th:replace="~{fragments :: topbar('Semantik axtarış', 'Axtarış keyfiyyətinin yoxlanması və səslə daxiletmə')}"></header>
         <main class="page-content search-page">
           <section class="search-hero">
-            <span class="section-label">ASK YOUR KNOWLEDGE BASE</span><h1>Найдите норму по смыслу,<br />а не только по словам.</h1><p>Введите вопрос на русском или азербайджанском — либо продиктуйте его.</p>
+            <span class="section-label">BİLİK BAZANIZDA AXTARIN</span><h1>Normanı yalnız sözlərə görə deyil,<br />mənasına görə tapın.</h1><p>Sualı Azərbaycan və ya rus dilində yazın, yaxud səslə daxil edin.</p>
             <form class="semantic-form" method="get" action="/admin/search">
               <div class="query-composer panel">
-                <textarea id="search-query" name="query" rows="3" required th:text="${query}" placeholder="Например: İşəgötürən hansı hallarda əmək müqaviləsini ləğv edə bilər?"></textarea>
+                <textarea id="search-query" name="query" rows="3" required th:text="${query}" placeholder="Məsələn: İşəgötürən hansı hallarda əmək müqaviləsini ləğv edə bilər?"></textarea>
                 <div class="composer-footer">
-                  <div class="voice-control"><button class="microphone-button" type="button" data-stt-button aria-label="Начать голосовой ввод"><span class="mic-icon">●</span><span data-stt-label>Голосовой ввод</span></button><select class="stt-language" data-stt-language aria-label="Язык голосового ввода"><option value="az">AZ</option><option value="ru">RU</option><option value="">AUTO</option></select><span class="recording-time hidden" data-recording-time>00:00</span></div>
-                  <div class="search-controls"><label>TOP <input type="number" name="limit" min="1" max="50" th:value="${limit}" /></label><button class="button primary" type="submit">Найти <span>⌕</span></button></div>
+                  <div class="voice-control"><button class="microphone-button" type="button" data-stt-button aria-label="Səslə daxiletməni başlat"><span class="mic-icon">●</span><span data-stt-label>Səslə daxiletmə</span></button><select class="stt-language" data-stt-language aria-label="Səslə daxiletmənin dili"><option value="az">AZ</option><option value="ru">RU</option><option value="">AVTOMATİK</option></select><span class="recording-time hidden" data-recording-time>00:00</span></div>
+                  <div class="search-controls"><label>NƏTİCƏ SAYI <input type="number" name="limit" min="1" max="50" th:value="${limit}" /></label><button class="button primary" type="submit">Axtar <span>⌕</span></button></div>
                 </div>
               </div>
               <div class="stt-message hidden" data-stt-message role="status"></div>
             </form>
-            <div class="suggestion-row"><span>Примеры:</span><button type="button" data-query-example="Mülki hüquq qabiliyyəti nə vaxt yaranır?">Правоспособность</button><button type="button" data-query-example="Əmək müqaviləsinə hansı hallarda xitam verilir?">Трудовой договор</button><button type="button" data-query-example="Vergi ödəyicisinin əsas hüquqları hansılardır?">Налоговые права</button></div>
+            <div class="suggestion-row"><span>Nümunələr:</span><button type="button" data-query-example="Mülki hüquq qabiliyyəti nə vaxt yaranır?">Hüquq qabiliyyəti</button><button type="button" data-query-example="Əmək müqaviləsinə hansı hallarda xitam verilir?">Əmək müqaviləsi</button><button type="button" data-query-example="Vergi ödəyicisinin əsas hüquqları hansılardır?">Vergi hüquqları</button></div>
           </section>
 
           <section class="search-results" th:if="${query != null and !#strings.isEmpty(query)}">
-            <div class="panel-heading"><div><span class="section-label">RETRIEVAL RESULTS</span><h2>Релевантные фрагменты</h2></div><span class="toolbar-count"><b th:text="${#lists.size(results)}">0</b> найдено</span></div>
+            <div class="panel-heading"><div><span class="section-label">AXTARIŞ NƏTİCƏLƏRİ</span><h2>Uyğun fraqmentlər</h2></div><span class="toolbar-count"><b th:text="${#lists.size(results)}">0</b> tapıldı</span></div>
             <div class="chunks-list">
               <article class="panel result-card" th:each="r, stat:${results}">
                 <div class="result-rank" th:text="${stat.count}">1</div>
-                <div class="result-content"><header><div><strong th:text="${r.articleNumber != null ? 'Статья ' + r.articleNumber : 'Chunk #' + r.chunkIndex}"></strong><small th:text="${r.parentPath ?: 'Юридический документ'}"></small></div><span class="similarity" th:text="${#numbers.formatDecimal(r.similarity * 100,1,1)} + '%'">90%</span></header><pre th:text="${r.content}"></pre><details><summary>Показать metadata</summary><code th:text="${r.metadata}"></code></details></div>
+                <div class="result-content"><header><div><strong th:text="${r.articleNumber != null ? 'Maddə ' + r.articleNumber : 'Fraqment #' + r.chunkIndex}"></strong><small th:text="${r.parentPath ?: 'Hüquqi sənəd'}"></small></div><span class="similarity" th:text="${#numbers.formatDecimal(r.similarity * 100,1,1)} + '%'">90%</span></header><pre th:text="${r.content}"></pre><details><summary>Metaverilənləri göstər</summary><code th:text="${r.metadata}"></code></details></div>
               </article>
-              <div class="empty-state panel" th:if="${#lists.isEmpty(results)}"><span>⌕</span><strong>Совпадений не найдено</strong><p>Попробуйте переформулировать вопрос или загрузить дополнительные документы.</p></div>
+              <div class="empty-state panel" th:if="${#lists.isEmpty(results)}"><span>⌕</span><strong>Uyğun nəticə tapılmadı</strong><p>Sualı başqa şəkildə ifadə edin və ya əlavə sənədlər yükləyin.</p></div>
             </div>
           </section>
         </main>

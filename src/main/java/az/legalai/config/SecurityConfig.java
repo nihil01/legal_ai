@@ -35,11 +35,18 @@ public class SecurityConfig {
     SecurityFilterChain security(HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(
                         a ->
-                                a.requestMatchers("/actuator/health", "/css/**")
+                                a.requestMatchers("/actuator/health", "/login", "/css/**", "/js/**")
                                         .permitAll()
                                         .anyRequest()
                                         .hasRole("ADMIN"))
+                .formLogin(
+                        form ->
+                                form.loginPage("/login")
+                                        .defaultSuccessUrl("/admin", true)
+                                        .failureUrl("/login?error")
+                                        .permitAll())
                 .httpBasic(Customizer.withDefaults())
+                .logout(logout -> logout.logoutSuccessUrl("/login?logout").permitAll())
                 .csrf(Customizer.withDefaults())
                 .build();
     }

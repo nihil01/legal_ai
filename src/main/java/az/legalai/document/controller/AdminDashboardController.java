@@ -5,17 +5,15 @@ import az.legalai.document.service.DocumentQueryService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
+@RequiredArgsConstructor
 public class AdminDashboardController {
     private final DocumentQueryService queries;
-
-    public AdminDashboardController(DocumentQueryService queries) {
-        this.queries = queries;
-    }
 
     @GetMapping("/admin")
     public String dashboard(Model model) {

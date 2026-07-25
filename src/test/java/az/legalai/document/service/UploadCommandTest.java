@@ -19,6 +19,6 @@ class UploadCommandTest {
     void rejectsInvalidLanguageTag() {
         assertThatThrownBy(() -> new UploadCommand("Law", null, null, null, null, "az<script>"))
                 .isInstanceOf(DocumentValidationException.class)
-                .hasMessageContaining("языка");
+                .hasMessageContaining("Dil kodu");
     }
 }

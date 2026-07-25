@@ -31,16 +31,16 @@ public class SpeechTranscriptionController {
             @RequestParam("audio") MultipartFile audio,
             @RequestParam(required = false, defaultValue = "az") String language) {
         if (audio.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Audio recording is empty"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Səs yazısı boşdur"));
         }
         if (audio.getSize() > maxAudioBytes) {
             return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                    .body(Map.of("error", "Audio recording is too large"));
+                    .body(Map.of("error", "Səs yazısının ölçüsü çox böyükdür"));
         }
         String contentType = normalizeContentType(audio.getContentType());
         if (!contentType.startsWith("audio/")) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                    .body(Map.of("error", "Unsupported audio format"));
+                    .body(Map.of("error", "Səs formatı dəstəklənmir"));
         }
         try {
             String text =
@@ -53,12 +53,13 @@ public class SpeechTranscriptionController {
             return ResponseEntity.ok(Map.of("text", text));
         } catch (AiProviderNotConfiguredException exception) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", exception.getMessage()));
+                    .body(Map.of("error", "Nitqin tanınması xidməti sazlanmayıb"));
         } catch (IOException exception) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Cannot read audio recording"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Səs yazısını oxumaq mümkün olmadı"));
         } catch (RuntimeException exception) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                    .body(Map.of("error", "Speech-to-text provider request failed"));
+                    .body(Map.of("error", "Nitqin tanınması xidmətinə sorğu uğursuz oldu"));
         }
     }
 

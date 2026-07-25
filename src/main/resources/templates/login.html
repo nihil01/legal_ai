@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="az" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Giriş — Legal AI</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/legal-ai-theme.css" />
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <section class="login-story" aria-label="Legal AI platforması">
+        <a class="brand login-brand" href="/login">
+          <span class="brand-mark">L</span>
+          <span><strong>Legal AI</strong><small>Bilik platforması</small></span>
+        </a>
+        <div class="login-story-copy">
+          <span class="section-label">MƏXFİ BİLİK MÜHİTİ</span>
+          <h1>Hüquqi sənədlər.<br />Strukturlaşdırılmış və qorunan.</h1>
+          <p>Orijinalları, versiyaları, fraqmentləri və semantik axtarışı vahid qapalı idarəetmə panelindən idarə edin.</p>
+          <ul class="login-benefits">
+            <li><span>✓</span> DOC, DOCX, PDF, HTML və TXT</li>
+            <li><span>✓</span> Maddələr üzrə avtomatik bölünmə</li>
+            <li><span>✓</span> Versiyalar, vəziyyətlər və təkrar emal</li>
+          </ul>
+        </div>
+        <div class="login-security-note"><span class="live-dot"></span><span>Spring Security ilə qorunur</span></div>
+      </section>
+
+      <section class="login-panel">
+        <div class="login-card panel">
+          <div class="login-card-head">
+            <span class="login-lock">⌁</span>
+            <div><span class="section-label">İDARƏÇİ GİRİŞİ</span><h2>Xoş gəlmisiniz</h2></div>
+          </div>
+          <p>İdarəetmə mühitini açmaq üçün giriş məlumatlarını daxil edin.</p>
+
+          <div class="login-alert error" th:if="${param.error}"><span>!</span><span>İstifadəçi adı və ya şifrə yanlışdır</span></div>
+          <div class="login-alert success" th:if="${param.logout}"><span>✓</span><span>Sistemdən uğurla çıxdınız</span></div>
+
+          <form class="login-form" method="post" th:action="@{/login}">
+            <label class="field">
+              <span>İstifadəçi adı</span>
+              <input name="username" type="text" autocomplete="username" required autofocus placeholder="admin" />
+            </label>
+            <label class="field">
+              <span>Şifrə</span>
+              <input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••••" />
+            </label>
+            <button class="button primary login-submit" type="submit">İdarəetmə panelinə daxil ol <span>→</span></button>
+          </form>
+          <div class="login-meta"><span>Qapalı MVP</span><span>Sessiya qorunur</span></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -5,27 +5,21 @@ import az.legalai.document.repository.LegalDocumentRepository;
 import az.legalai.job.DocumentProcessingJobStore;
 import az.legalai.storage.DocumentStorage;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class DocumentLifecycleService {
-    private static final Logger log = LoggerFactory.getLogger(DocumentLifecycleService.class);
 
     private final LegalDocumentRepository docs;
     private final DocumentProcessingJobStore jobs;
     private final DocumentStorage storage;
-
-    public DocumentLifecycleService(
-            LegalDocumentRepository d, DocumentProcessingJobStore j, DocumentStorage s) {
-        docs = d;
-        jobs = j;
-        storage = s;
-    }
 
     @Transactional
     public void reprocess(UUID id) {

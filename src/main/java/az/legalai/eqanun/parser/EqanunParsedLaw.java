@@ -4,4 +4,8 @@ import az.legalai.ingestion.extractor.ExtractedDocument;
 import az.legalai.ingestion.parser.LegalSection;
 
 public record EqanunParsedLaw(
-        EqanunLawCandidate candidate, ExtractedDocument extracted, LegalSection structure) {}
+        EqanunLawCandidate candidate,
+        String originalFilename,
+        String mimeType,
+        ExtractedDocument extractedDocument,
+        LegalSection structure) {}

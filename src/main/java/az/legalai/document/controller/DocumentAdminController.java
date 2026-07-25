@@ -4,8 +4,8 @@ import az.legalai.document.domain.DocumentType;
 import az.legalai.document.service.*;
 import java.time.LocalDate;
 import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,19 +15,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/documents")
+@RequiredArgsConstructor
+@Slf4j
 public class DocumentAdminController {
-    private static final Logger log = LoggerFactory.getLogger(DocumentAdminController.class);
 
     private final DocumentUploadService uploads;
     private final DocumentQueryService queries;
     private final DocumentLifecycleService lifecycle;
-
-    public DocumentAdminController(
-            DocumentUploadService u, DocumentQueryService q, DocumentLifecycleService l) {
-        uploads = u;
-        queries = q;
-        lifecycle = l;
-    }
 
     @GetMapping
     public String list(Model model) {
@@ -68,7 +62,7 @@ public class DocumentAdminController {
                                     adoptionDate,
                                     effectiveDate,
                                     language));
-            flash.addFlashAttribute("message", "Документ загружен и поставлен в очередь");
+            flash.addFlashAttribute("message", "Sənəd yükləndi və emal növbəsinə əlavə edildi");
             return "redirect:/admin/documents/" + id;
         } catch (DocumentValidationException | DuplicateDocumentException e) {
             flash.addFlashAttribute("error", e.getMessage());
@@ -76,16 +70,24 @@ public class DocumentAdminController {
         } catch (RuntimeException e) {
             log.error("Unexpected document upload failure", e);
             flash.addFlashAttribute(
-                    "error", "Не удалось загрузить документ. Проверьте файл и повторите попытку");
+                    "error", "Sənədi yükləmək mümkün olmadı. Faylı yoxlayın və yenidən cəhd edin");
             return "redirect:/admin/documents/upload";
         }
     }
 
     @GetMapping("/{id}")
-    public String details(@PathVariable UUID id, Model model) {
+    public String details(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            Model model) {
+        var chunkPage = queries.chunks(id, q, page, size);
         model.addAttribute("document", queries.get(id));
-        model.addAttribute("chunks", queries.chunks(id));
+        model.addAttribute("chunks", chunkPage.items());
         model.addAttribute("chunkCount", queries.chunkCount(id));
+        model.addAttribute("chunkPage", chunkPage);
+        model.addAttribute("chunkQuery", q == null ? "" : q.trim());
         return "documents/details";
     }
 
@@ -93,10 +95,10 @@ public class DocumentAdminController {
     public String reprocess(@PathVariable UUID id, RedirectAttributes f) {
         try {
             lifecycle.reprocess(id);
-            f.addFlashAttribute("message", "Повторная обработка поставлена в очередь");
+            f.addFlashAttribute("message", "Təkrar emal növbəyə əlavə edildi");
         } catch (RuntimeException e) {
             log.error("Failed to reprocess document {}", id, e);
-            f.addFlashAttribute("error", "Не удалось запустить повторную обработку");
+            f.addFlashAttribute("error", "Təkrar emalı başlatmaq mümkün olmadı");
         }
         return "redirect:/admin/documents/" + id;
     }
@@ -105,11 +107,11 @@ public class DocumentAdminController {
     public String delete(@PathVariable UUID id, RedirectAttributes f) {
         try {
             lifecycle.delete(id);
-            f.addFlashAttribute("message", "Документ удалён");
+            f.addFlashAttribute("message", "Sənəd silindi");
             return "redirect:/admin/documents";
         } catch (RuntimeException e) {
             log.error("Failed to delete document {}", id, e);
-            f.addFlashAttribute("error", "Не удалось удалить документ");
+            f.addFlashAttribute("error", "Sənədi silmək mümkün olmadı");
             return "redirect:/admin/documents/" + id;
         }
     }

@@ -37,14 +37,14 @@
   const setIdle = () => {
     phase = "idle";
     button.disabled = false;
-    label.textContent = "Голосовой ввод";
+    label.textContent = "Səslə daxiletmə";
   };
 
   const upload = async (blob) => {
     phase = "uploading";
-    setMessage("Распознаю запись…");
+    setMessage("Səs yazısı tanınır…");
     button.disabled = true;
-    label.textContent = "Распознавание…";
+    label.textContent = "Tanınma gedir…";
     const form = new FormData();
     form.append("audio", blob, `recording.${extensionFor(blob.type)}`);
     form.append("language", language?.value || "");
@@ -52,13 +52,13 @@
     if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
     try {
       const response = await fetch("/admin/api/transcriptions", { method: "POST", body: form, headers });
-      const payload = await response.json().catch(() => ({ error: "Некорректный ответ сервера" }));
-      if (!response.ok) throw new Error(payload.error || "Не удалось распознать речь");
+      const payload = await response.json().catch(() => ({ error: "Serverin cavabı düzgün deyil" }));
+      if (!response.ok) throw new Error(payload.error || "Nitqi tanımaq mümkün olmadı");
       query.value = [query.value.trim(), payload.text].filter(Boolean).join(" ");
       query.focus();
-      setMessage("Текст распознан и добавлен в запрос.");
+      setMessage("Mətn tanındı və sorğuya əlavə edildi.");
     } catch (error) {
-      setMessage(error.message || "Ошибка распознавания речи", true);
+      setMessage(error.message || "Nitqin tanınması zamanı xəta baş verdi", true);
     } finally {
       setIdle();
     }
@@ -68,20 +68,20 @@
     if (phase !== "recording" || recorder?.state !== "recording") return;
     phase = "stopping";
     button.disabled = true;
-    label.textContent = "Останавливаю…";
+    label.textContent = "Dayandırılır…";
     recorder.stop();
   };
 
   const start = async () => {
     if (phase !== "idle") return;
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      setMessage("Этот браузер не поддерживает запись с микрофона.", true);
+      setMessage("Bu brauzer mikrofonla səs yazısını dəstəkləmir.", true);
       return;
     }
 
     phase = "requesting";
     button.disabled = true;
-    label.textContent = "Доступ к микрофону…";
+    label.textContent = "Mikrofona giriş gözlənilir…";
     setMessage("");
     try {
       const activeStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
@@ -97,7 +97,7 @@
       activeRecorder.addEventListener("error", () => {
         resetRecorderUi(activeStream);
         setIdle();
-        setMessage("Браузер прервал запись с микрофона.", true);
+        setMessage("Brauzer mikrofon yazısını dayandırdı.", true);
       }, { once: true });
       activeRecorder.addEventListener("stop", async () => {
         const blob = new Blob(chunks, { type: activeRecorder.mimeType || mimeType || "audio/webm" });
@@ -105,7 +105,7 @@
         if (blob.size > 0) await upload(blob);
         else {
           setIdle();
-          setMessage("Запись получилась пустой.", true);
+          setMessage("Səs yazısı boşdur.", true);
         }
       }, { once: true });
 
@@ -114,7 +114,7 @@
       startedAt = Date.now();
       button.disabled = false;
       button.classList.add("recording");
-      label.textContent = "Остановить запись";
+      label.textContent = "Yazını dayandır";
       timer.classList.remove("hidden");
       timer.textContent = "00:00";
       timerId = setInterval(() => {
@@ -127,7 +127,7 @@
       stream = undefined;
       recorder = undefined;
       setIdle();
-      setMessage(error.name === "NotAllowedError" ? "Разрешите доступ к микрофону в браузере." : "Не удалось открыть микрофон.", true);
+      setMessage(error.name === "NotAllowedError" ? "Brauzerdə mikrofona giriş icazəsi verin." : "Mikrofonu açmaq mümkün olmadı.", true);
     }
   };
 

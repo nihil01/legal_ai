@@ -1,7 +1,5 @@
 package az.legalai.eqanun.scheduler;
 
-import az.legalai.eqanun.service.EqanunLawSyncService;
-import az.legalai.eqanun.service.PlaceholderEqanunLawSyncService;
 import java.time.ZoneId;
 import java.util.TimeZone;
 import org.quartz.CronScheduleBuilder;
@@ -10,7 +8,6 @@ import org.quartz.JobDetail;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,12 +20,6 @@ import org.springframework.context.annotation.Configuration;
         matchIfMissing = true)
 public class EqanunSchedulerConfig {
     @Bean
-    @ConditionalOnMissingBean(EqanunLawSyncService.class)
-    EqanunLawSyncService placeholderEqanunLawSyncService() {
-        return new PlaceholderEqanunLawSyncService();
-    }
-
-    @Bean
     JobDetail eqanunLawSyncJobDetail() {
         return JobBuilder.newJob(EqanunLawSyncJob.class)
                 .withIdentity("eqanun-law-sync")
@@ -40,7 +31,7 @@ public class EqanunSchedulerConfig {
     @Bean
     Trigger eqanunLawSyncTrigger(
             JobDetail eqanunLawSyncJobDetail,
-            @Value("${app.eqanun.sync.cron:0 0 3 * * ?}") String cron,
+            @Value("${app.eqanun.sync.cron:0 35 21 * * ?}") String cron,
             @Value("${app.eqanun.sync.time-zone:Asia/Baku}") String timeZone) {
         ZoneId zoneId = ZoneId.of(timeZone);
         return TriggerBuilder.newTrigger()

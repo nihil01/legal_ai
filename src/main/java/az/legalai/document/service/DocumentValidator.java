@@ -30,30 +30,30 @@ public final class DocumentValidator {
     }
 
     public ValidatedDocument validate(MultipartFile file) {
-        if (file == null || file.isEmpty()) throw new DocumentValidationException("Файл пуст");
+        if (file == null || file.isEmpty()) throw new DocumentValidationException("Fayl boşdur");
         if (file.getSize() > maxBytes)
-            throw new DocumentValidationException("Размер файла превышает лимит");
+            throw new DocumentValidationException("Faylın ölçüsü icazə verilən həddi aşır");
         String filename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename();
         String ext = extension(filename);
         if (!TYPES.containsKey(ext))
-            throw new DocumentValidationException("Неподдерживаемый формат файла");
+            throw new DocumentValidationException("Fayl formatı dəstəklənmir");
         try {
             byte[] bytes = file.getBytes();
             String mime = detect(ext, bytes);
             return new ValidatedDocument(filename, mime, bytes.length, sha256(bytes), bytes);
         } catch (IOException e) {
-            throw new DocumentValidationException("Не удалось прочитать файл");
+            throw new DocumentValidationException("Faylı oxumaq mümkün olmadı");
         }
     }
 
     private String detect(String ext, byte[] b) {
         if ("docx".equals(ext) && !starts(b, new byte[] {'P', 'K', 3, 4}))
-            throw new DocumentValidationException("Содержимое файла не соответствует DOCX");
+            throw new DocumentValidationException("Faylın məzmunu DOCX formatına uyğun deyil");
         if ("doc".equals(ext)
                 && !starts(b, new byte[] {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0}))
-            throw new DocumentValidationException("Содержимое файла не соответствует DOC");
+            throw new DocumentValidationException("Faylın məzmunu DOC formatına uyğun deyil");
         if ("pdf".equals(ext) && !starts(b, "%PDF".getBytes()))
-            throw new DocumentValidationException("Содержимое файла не соответствует PDF");
+            throw new DocumentValidationException("Faylın məzmunu PDF formatına uyğun deyil");
         return TYPES.get(ext);
     }
 
